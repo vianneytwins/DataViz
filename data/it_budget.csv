@@ -1,0 +1,13 @@
+grant_title,id,organization,total_amount,group
+Panorama,1,risk,3500000,lip
+Sophis,2,tpnc,5000000,all
+LNS,3,tpnc,3000000,all
+QRT,4,risk,50000,all
+QhLyx,5,front,150000,ais
+Bsam,6,reporting,1500000,etf
+WebMap,7,reporting,600000,lip
+Phedex,8,front,150000,lip
+FolioMetrics,9,front,120000,lip
+WebsiteEtf,10,reporting,100000,etf
+LyxTools,11,risk,50000,all
+Louxor,12,front,1500000,ais
