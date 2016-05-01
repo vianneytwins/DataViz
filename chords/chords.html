@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.chord path {
+  fill-opacity: .67;
+  stroke: #000;
+  stroke-width: .5px;
+}
+
+</style>
+<body>
+<script src="../libs/d3.min.js"></script>
+<script>
+
+// From http://mkweb.bcgsc.ca/circos/guide/tables/
+/*var matrix = [
+  [11975,  5871, 8916, 2868],
+  [ 1951, 10048, 2060, 6171],
+  [ 8010, 16145, 8090, 8045],
+  [ 1013,   990,  940, 6907]
+];*/
+
+var matrix = [
+  [   1,  0.9,  -0.3, 0.6],
+  [ 0.9,    1, 0.45, 0.3],
+  [ -0.3, 0.45,    1, -0.7],
+  [ 0.6, 0.3,  -0.7, 1]
+];
+// MAtric2 is the correlation matrix multy by the allocation weignt in percentage
+var matrix2 = [
+  [ 0,  54,  18, 36],
+  [ 18,    0, 9, 6],
+  [ 4.5, 6,    0, 10],
+  [ 3, 1.5,  3.5, 0]
+];
+var allocation = [60,  20,  15, 5];
+var fundNames = ["My Fund 1",  "My Fund 2",  "My Fund 3", "My Fund 4"];
+
+function getFundname(i) {
+  return fundNames[i];
+}
+
+var chord = d3.layout.chord()
+    .padding(.05)
+    .sortSubgroups(d3.descending)
+    .matrix(matrix2);
+
+var width = 960,
+    height = 600,
+    innerRadius = Math.min(width, height) * .35,
+    outerRadius = innerRadius * 1.1;
+
+// Set the color via a scale
+var fill = d3.scale.ordinal()
+    .domain(d3.range(4))
+    .range(["#a3778e", "#c6c6d1", "#c8d6e3", "#eff1ea"]);
+
+// Attempt to do a linear gradaint depending on the value of the correl matrix
+var colours = ["#ec1213", "#e65657", "#e47f7f", "#e6a4a4", "#e4bdbd", "#dfcece",
+               "#cdd6cb", "#9ccb96", "#a7d5a2", "#5bb450", "#4cc43d", "#1fc40b"];
+
+var colorize = d3.scale.threshold().domain([-1,-0.8,-0.6,-0.4,-0.2,0,0.2,0.4,0.6,0.8,1,1.2]).range(colours);
+// Colors can be autofill via this method also
+//var fill = d3.scale.category20c();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+  .append("g")
+    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+svg.append("g").selectAll("path")
+    .data(chord.groups)
+  .enter().append("path")
+    // fill is the color of the inner part of the external arc
+    //.style("fill", function(d) { return fill(d.index); })
+    .style("fill", "#c8d6e3")
+    // stroke is the color of stroke of the external arc
+    .style("stroke", "#c8d6e3")
+    .attr("d", d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius))
+    .on("mouseover", fade(.1))
+    .on("mouseout", fade(1));
+
+var ticks = svg.append("g").selectAll("g")
+    .data(chord.groups)
+  .enter().append("g").selectAll("g")
+    .data(groupTicks)
+  .enter().append("g")
+    .attr("transform", function(d) {
+      return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+          + "translate(" + outerRadius + ",0)";
+    });
+
+// Add ticks on the graph
+//ticks.append("line")
+//    .attr("x1", 1)
+//    .attr("y1", 0)
+//    .attr("x2", 5)
+//    .attr("y2", 0)
+//    .style("stroke", "#000");
+
+// Add the text
+ticks.append("text")
+    .attr("x", 8)
+    .attr("dy", ".35em")
+    .attr("transform", function(d) { return d.angle > Math.PI ? "rotate(180)translate(-16)" : null; })
+    .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+    .text(function(d) { return d.label; });
+
+svg.append("g")
+    .attr("class", "chord")
+  .selectAll("path")
+    .data(chord.chords)
+  .enter().append("path")
+    .attr("d", d3.svg.chord().radius(innerRadius))
+    // fill here is the color of the path
+    //.style("fill", function(d) { return fill(d.target.index); })
+    //.style("fill", "#a3778e")
+    .style("fill", function(d) {
+      return colorize(matrix[d.target.index][d.target.subindex]);})
+    .style("opacity", 1);
+
+// Returns an array of tick angles and labels, given a group.
+function groupTicks(d) {
+  var k = (d.endAngle - d.startAngle) / d.value;
+  return d3.range(0, d.value, 1000).map(function(v, i) {
+    return {
+      // if you want the label at the beginning of the arc
+      //angle: v * k + d.startAngle,
+      // if you want the label at middle of each arc
+      angle: (d.startAngle + d.endAngle) / 2,
+      label : getFundname(d.index)
+    };
+  });
+}
+
+// Returns an event handler for fading a given chord group.
+function fade(opacity) {
+  return function(g, i) {
+    svg.selectAll(".chord path")
+        .filter(function(d) { return d.source.index != i && d.target.index != i; })
+      .transition()
+        .style("opacity", opacity);
+  };
+}
+
+</script>
